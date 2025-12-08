@@ -210,34 +210,6 @@
             margin-bottom: 20px;
         }
 
-        /* --- Tabela --- */
-        .table-section {
-            background: var(--white-color);
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            overflow-x: auto;
-        }
-        #dataTable {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        #dataTable th, #dataTable td {
-            padding: 12px 15px;
-            border-bottom: 1px solid var(--border-color);
-            text-align: left;
-            font-size: 14px;
-            white-space: nowrap;
-        }
-        #dataTable th {
-            background-color: var(--light-blue);
-            color: var(--secondary-color);
-            font-weight: 600;
-        }
-        #dataTable tbody tr:hover {
-            background-color: #f1f1f1;
-        }
-
         /* --- Responsividade --- */
         @media (max-width: 1200px) {
             .charts-grid { grid-template-columns: 1fr; }
@@ -264,10 +236,6 @@
 
     <section class="filters-section">
         <div class="filters-grid">
-            <div class="filter-group">
-                <label for="filter-competencia">Competência</label>
-                <select id="filter-competencia"></select>
-            </div>
             <div class="filter-group">
                 <label for="filter-unidade">UPA 24h</label>
                 <select id="filter-unidade"></select>
@@ -374,24 +342,6 @@
         </div>
     </section>
 
-    <section class="table-section">
-        <h3 class="chart-title">Detalhes dos Atendimentos</h3>
-        <table id="dataTable">
-            <thead>
-                <tr>
-                    <th>UPA 24h</th>
-                    <th>Paciente</th>
-                    <th>Chegada</th>
-                    <th>Risco</th>
-                    <th>É Fast Track?</th>
-                    <th>Tempo Total</th>
-                    <th>Desfecho</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
-    </section>
-
 </div>
 
 <script>
@@ -406,49 +356,356 @@ const cidDescritivos = {
     "B349": "B349 – Infecção viral não especificada",
     "R11": "R11 – Náusea e vômitos",
     "R51": "R51 – Cefaleia",
-    "M791": "M791 – Mialgia"
+    "M791": "M791 – Mialgia",
+    "J00": "J00 - NASOFARINGITE AGUDA [RESFRIADO COMUM]",
+    "F411": "F411 - ANSIEDADE GENERALIZADA",
+    "I10": "I10 - HIPERTENSAO ESSENCIAL (PRIMARIA)",
+    "Z018": "Z018 - OUTROS EXAMES ESPECIAIS ESPECIFICADOS",
+    "Y66": "Y66 - NAO ADMINISTRACAO DE CUIDADO MEDICO E CIRURGICO",
+    "R10": "R10 - DOR ABDOMINAL E PELVICA",
+    "T784": "T784 - ALERGIA NAO ESPECIFICADA",
+    "N39": "N39 - TRANSTORNOS DO TRATO URINARIO",
+    "K52": "K52 - OUTRAS GASTROENTERITES E COLITES NAO-INFECCIOSAS",
+    "N390": "N390 - INFECCAO DO TRATO URINARIO DE LOCALIZACAO NAO ESPECIFICADA"
 };
 
-// --- DADOS DE ATESTADOS POR UPA ---
-const atestadosPorUPA = {
-    "UPA Itaboraí": { atestadoFT: 20, totalFT: 74, atestadoNFT: 78, totalNFT: 252 },
-    "UPA Campo Grande II": { atestadoFT: 31, totalFT: 56, atestadoNFT: 147, totalNFT: 395 },
-    "UPA Botafogo": { atestadoFT: 7, totalFT: 51, atestadoNFT: 145, totalNFT: 405 },
-    "UPA Jacarepaguá": { atestadoFT: 5, totalFT: 16, atestadoNFT: 311, totalNFT: 584 },
-    "UPA Engenho Novo": { atestadoFT: 14, totalFT: 92, atestadoNFT: 102, totalNFT: 330 },
-    "UPA Santa Cruz": { atestadoFT: 27, totalFT: 119, atestadoNFT: 201, totalNFT: 490 },
-    "UPA Mesquita": { atestadoFT: 0, totalFT: 2, atestadoNFT: 256, totalNFT: 605 },
-    "UPA Marechal Hermes": { atestadoFT: 17, totalFT: 63, atestadoNFT: 147, totalNFT: 379 },
-    "UPA Ricardo de Albuquerque": { atestadoFT: 0, totalFT: 0, atestadoNFT: 177, totalNFT: 414 }
+// --- DADOS DE ATESTADOS POR UPA (CARDS) ---
+const atestadoFTCardData = {
+    "Todas": { perc: 33, atestado: 938, total: 2778 },
+    "UPA Botafogo": { perc: 33, atestado: 85, total: 261 },
+    "UPA Campo Grande II": { perc: 35, atestado: 109, total: 313 },
+    "UPA Engenho Novo": { perc: 15, atestado: 62, total: 407 },
+    "UPA Itaboraí": { perc: 31, atestado: 77, total: 248 },
+    "UPA Jacarepaguá": { perc: 30, atestado: 119, total: 401 },
+    "UPA Marechal Hermes": { perc: 18, atestado: 51, total: 280 },
+    "UPA Mesquita": { perc: 39, atestado: 108, total: 279 },
+    "UPA Ricardo de Albuquerque": { perc: 46, atestado: 53, total: 114 },
+    "UPA Santa Cruz": { perc: 37, atestado: 175, total: 475 }
 };
 
-// --- DADOS DE HORÁRIOS FAST TRACK POR UPA ---
-const horariosUPA_FT = {
-    "UPA Itaboraí": { 7: 3, 8: 16, 9: 11, 10: 7, 11: 6, 12: 6, 13: 9, 14: 6, 15: 3, 16: 5, 17: 2 },
-    "UPA Campo Grande II": { 8: 1, 9: 8, 10: 15, 11: 13, 12: 7, 13: 6, 14: 1, 15: 3, 16: 2 },
-    "UPA Botafogo": { 9: 9, 10: 5, 11: 4, 12: 7, 13: 9, 14: 5, 15: 5, 16: 7 },
-    "UPA Jacarepaguá": { 9: 1, 10: 5, 11: 1, 12: 1, 13: 3, 16: 1, 17: 1, 18: 2, 19: 1 },
-    "UPA Engenho Novo": { 7: 1, 8: 23, 9: 17, 10: 13, 11: 4, 12: 3, 14: 4, 15: 9, 16: 7, 17: 5, 18: 2, 19: 4 },
-    "UPA Santa Cruz": { 7: 12, 8: 12, 9: 6, 10: 5, 11: 9, 12: 14, 13: 8, 14: 5, 15: 18, 16: 12, 17: 14, 18: 4 },
-    "UPA Mesquita": { 9: 2 },
-    "UPA Marechal Hermes": { 8: 2, 9: 12, 10: 9, 11: 7, 12: 4, 13: 6, 14: 8, 15: 7, 16: 8 },
-    "UPA Ricardo de Albuquerque": {}
+const atestadoNFTCardData = {
+    "Todas": { perc: 36, atestado: 4462, total: 12171 },
+    "UPA Botafogo": { perc: 36, atestado: 515, total: 1434 },
+    "UPA Campo Grande II": { perc: 33, atestado: 412, total: 1248 },
+    "UPA Engenho Novo": { perc: 29, atestado: 311, total: 1062 },
+    "UPA Itaboraí": { perc: 28, atestado: 278, total: 994 },
+    "UPA Jacarepaguá": { perc: 49, atestado: 814, total: 1664 },
+    "UPA Marechal Hermes": { perc: 29, atestado: 324, total: 1127 },
+    "UPA Mesquita": { perc: 40, atestado: 753, total: 1880 },
+    "UPA Ricardo de Albuquerque": { perc: 37, atestado: 467, total: 1250 },
+    "UPA Santa Cruz": { perc: 39, atestado: 589, total: 1512 }
 };
 
-// --- DADOS DE HORÁRIOS NÃO FAST TRACK POR UPA ---
-const horariosUPA_NFT = {
-    "UPA Itaboraí": { 7: 17, 8: 14, 9: 15, 10: 21, 11: 11, 12: 10, 13: 11, 14: 10, 15: 5, 16: 13, 17: 10, 18: 20, 19: 18 },
-    "UPA Campo Grande II": { 7: 23, 8: 36, 9: 24, 10: 18, 11: 21, 12: 9, 13: 15, 14: 23, 15: 11, 16: 26, 17: 26, 18: 16, 19: 27 },
-    "UPA Botafogo": { 7: 27, 8: 40, 9: 37, 10: 23, 11: 21, 12: 13, 13: 24, 14: 17, 15: 13, 16: 19, 17: 20, 18: 18, 19: 16 },
-    "UPA Jacarepaguá": { 7: 37, 8: 58, 9: 40, 10: 36, 11: 35, 12: 26, 13: 21, 14: 31, 15: 33, 16: 17, 17: 22, 18: 37, 19: 26 },
-    "UPA Engenho Novo": { 7: 32, 8: 20, 9: 13, 10: 14, 11: 14, 12: 18, 13: 16, 14: 23, 15: 13, 16: 15, 17: 17, 18: 15, 19: 13 },
-    "UPA Santa Cruz": { 7: 20, 8: 49, 9: 53, 10: 35, 11: 21, 12: 14, 13: 17, 14: 20, 15: 19, 16: 12, 17: 14, 18: 24, 19: 28 },
-    "UPA Mesquita": { 7: 44, 8: 51, 9: 61, 10: 43, 11: 25, 12: 39, 13: 31, 14: 23, 15: 38, 16: 19, 17: 18, 18: 30, 19: 14 },
-    "UPA Marechal Hermes": { 7: 35, 8: 44, 9: 22, 10: 23, 11: 17, 12: 13, 13: 17, 14: 17, 15: 10, 16: 12, 17: 16, 18: 22, 19: 12 },
-    "UPA Ricardo de Albuquerque": { 7: 17, 8: 42, 9: 36, 10: 27, 11: 17, 12: 21, 13: 17, 14: 21, 15: 18, 16: 19, 17: 27, 18: 18, 19: 13 }
+// --- DADOS DE ATESTADOS POR UPA (GRÁFICO) ---
+const atestadoFTChartData = {
+    "Todas": { comAtestado: 938, semAtestado: 1840 },
+    "UPA Botafogo": { comAtestado: 85, semAtestado: 176 },
+    "UPA Campo Grande II": { comAtestado: 109, semAtestado: 204 },
+    "UPA Engenho Novo": { comAtestado: 62, semAtestado: 345 },
+    "UPA Itaboraí": { comAtestado: 77, semAtestado: 171 },
+    "UPA Jacarepaguá": { comAtestado: 119, semAtestado: 282 },
+    "UPA Marechal Hermes": { comAtestado: 51, semAtestado: 229 },
+    "UPA Mesquita": { comAtestado: 108, semAtestado: 171 },
+    "UPA Ricardo de Albuquerque": { comAtestado: 53, semAtestado: 61 },
+    "UPA Santa Cruz": { comAtestado: 175, semAtestado: 300 }
 };
 
-// --- SIMULAÇÃO DE DADOS FIEL ÀS PROPORÇÕES ---
+// --- DADOS DE HORÁRIOS FAST TRACK POR UPA (GRÁFICO) ---
+const horariosFTChartData = {
+    "Todas": {
+        horas: [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19],
+        dados: [218, 286, 261, 251, 279, 292, 274, 226, 191, 158, 118, 84, 40]
+    },
+    "UPA Botafogo": {
+        horas: [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19],
+        dados: [24, 29, 27, 29, 31, 28, 26, 19, 14, 12, 9, 5, 2]
+    },
+    "UPA Campo Grande II": {
+        horas: [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19],
+        dados: [31, 37, 34, 34, 42, 49, 42, 32, 26, 21, 16, 7, 2]
+    },
+    "UPA Engenho Novo": {
+        horas: [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19],
+        dados: [25, 33, 30, 25, 27, 29, 27, 22, 17, 12, 7, 4, 2]
+    },
+    "UPA Itaboraí": {
+        horas: [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19],
+        dados: [31, 40, 36, 34, 38, 38, 34, 28, 24, 20, 14, 7, 3]
+    },
+    "UPA Jacarepaguá": {
+        horas: [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19],
+        dados: [31, 41, 39, 37, 40, 39, 35, 31, 26, 21, 16, 11, 5]
+    },
+    "UPA Marechal Hermes": {
+        horas: [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19],
+        dados: [23, 28, 26, 24, 28, 27, 25, 21, 16, 13, 9, 6, 2]
+    },
+    "UPA Mesquita": {
+        horas: [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19],
+        dados: [15, 21, 18, 17, 19, 19, 21, 17, 14, 12, 10, 7, 4]
+    },
+    "UPA Ricardo de Albuquerque": {
+        horas: [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19],
+        dados: [18, 23, 21, 19, 22, 25, 25, 19, 16, 13, 10, 6, 4]
+    },
+    "UPA Santa Cruz": {
+        horas: [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19],
+        dados: [19, 33, 30, 31, 32, 38, 39, 40, 38, 34, 27, 23, 13]
+    }
+};
+
+// --- DADOS DE HORÁRIOS NÃO FAST TRACK POR UPA (GRÁFICO) ---
+const horariosNFTChartData = {
+    "Todas": {
+        horas: [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19],
+        dados: [264, 189, 139, 101, 116, 192, 427, 613, 890, 845, 826, 738, 634]
+    },
+    "UPA Botafogo": {
+        horas: [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19],
+        dados: [27, 21, 9, 12, 11, 17, 40, 69, 98, 88, 74, 97, 66]
+    },
+    "UPA Campo Grande II": {
+        horas: [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19],
+        dados: [31, 37, 34, 34, 42, 49, 42, 32, 26, 21, 16, 7, 2]
+    },
+    "UPA Engenho Novo": {
+        horas: [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19],
+        dados: [29, 23, 10, 10, 8, 20, 43, 69, 51, 55, 56, 66, 53]
+    },
+    "UPA Itaboraí": {
+        horas: [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19],
+        dados: [16, 6, 6, 5, 5, 15, 45, 41, 64, 78, 92, 101, 63]
+    },
+    "UPA Jacarepaguá": {
+        horas: [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19],
+        dados: [39, 29, 18, 12, 10, 35, 64, 94, 165, 126, 52, 73, 81]
+    },
+    "UPA Marechal Hermes": {
+        horas: [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19],
+        dados: [23, 28, 26, 24, 28, 27, 25, 21, 16, 13, 9, 6, 2]
+    },
+    "UPA Mesquita": {
+        horas: [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19],
+        dados: [39, 25, 19, 13, 23, 34, 51, 103, 117, 139, 92, 107, 81]
+    },
+    "UPA Ricardo de Albuquerque": {
+        horas: [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19],
+        dados: [26, 15, 15, 10, 15, 17, 45, 49, 90, 92, 72, 67, 52]
+    },
+    "UPA Santa Cruz": {
+        horas: [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19],
+        dados: [29, 26, 24, 19, 16, 21, 63, 65, 125, 129, 48, 60, 85]
+    }
+};
+
+// --- DADOS DE RISCO POR UPA (PARA O FILTRO VISUAL) ---
+const riscosPorUPA = {
+    "": ["Todas", "Vermelho", "Laranja Observação", "Laranja Consultório", "Amarelo Observação", "Amarelo Consultório", "Verde", "Azul"],
+    "UPA Botafogo": ["Todas", "Vermelho", "Laranja Observação", "Laranja Consultório", "Amarelo Observação", "Amarelo Consultório", "Verde", "Azul"],
+    "UPA Campo Grande II": ["Todas", "Vermelho", "Laranja Observação", "Laranja Consultório", "Amarelo Observação", "Amarelo Consultório", "Verde", "Azul"],
+    "UPA Engenho Novo": ["Todas", "Vermelho", "Laranja Observação", "Laranja Consultório", "Amarelo Observação", "Amarelo Consultório", "Verde", "Azul"],
+    "UPA Itaboraí": ["Todas", "Vermelho", "Laranja Observação", "Laranja Consultório", "Amarelo Observação", "Amarelo Consultório", "Verde", "Azul"],
+    "UPA Jacarepaguá": ["Todas", "Vermelho", "Laranja Observação", "Laranja Consultório", "Amarelo Observação", "Amarelo Consultório", "Verde", "Azul"],
+    "UPA Marechal Hermes": ["Todas", "Vermelho", "Laranja Observação", "Laranja Consultório", "Amarelo Observação", "Amarelo Consultório", "Verde", "Azul"],
+    "UPA Mesquita": ["Todas", "Vermelho", "Laranja Observação", "Laranja Consultório", "Amarelo Observação", "Amarelo Consultório", "Verde", "Azul"],
+    "UPA Ricardo de Albuquerque": ["Todas", "Vermelho", "Laranja Observação", "Laranja Consultório", "Amarelo Observação", "Amarelo Consultório", "Verde", "Azul"],
+    "UPA Santa Cruz": ["Todas", "Vermelho", "Laranja Observação", "Laranja Consultório", "Amarelo Observação", "Amarelo Consultório", "Verde", "Azul"]
+};
+
+// --- DADOS DE TAXA DE CLASSIFICAÇÃO FAST TRACK POR UPA ---
+const taxaClassificacaoFT = {
+    "Todas": { perc: 18, ft: 2778, total: 14949 },
+    "UPA Botafogo": { perc: 19, ft: 319, total: 1695 },
+    "UPA Campo Grande II": { perc: 20, ft: 316, total: 1561 },
+    "UPA Engenho Novo": { perc: 19, ft: 320, total: 1656 },
+    "UPA Itaboraí": { perc: 17, ft: 361, total: 2114 },
+    "UPA Jacarepaguá": { perc: 19, ft: 419, total: 2161 },
+    "UPA Marechal Hermes": { perc: 17, ft: 207, total: 1192 },
+    "UPA Mesquita": { perc: 14, ft: 168, total: 1221 },
+    "UPA Ricardo de Albuquerque": { perc: 18, ft: 242, total: 1364 },
+    "UPA Santa Cruz": { perc: 18, ft: 426, total: 1985 }
+};
+
+// --- DADOS DE TEMPO DE ESPERA ATÉ O FIM DA CR POR UPA ---
+const tempoEsperaCR = {
+    "Todas": { ft: 10, geral: 9 },
+    "UPA Botafogo": { ft: 11, geral: 9 },
+    "UPA Campo Grande II": { ft: 11, geral: 9 },
+    "UPA Engenho Novo": { ft: 11, geral: 9 },
+    "UPA Itaboraí": { ft: 9, geral: 9 },
+    "UPA Jacarepaguá": { ft: 10, geral: 8 },
+    "UPA Marechal Hermes": { ft: 10, geral: 8 },
+    "UPA Mesquita": { ft: 11, geral: 9 },
+    "UPA Ricardo de Albuquerque": { ft: 9, geral: 9 },
+    "UPA Santa Cruz": { ft: 11, geral: 9 }
+};
+
+// --- DADOS DE TEMPO ESPERA ENTRE A CR E O ATENDIMENTO MÉDICO POR UPA ---
+const tempoEsperaAtendimento = {
+    "Todas": { ft: 30, geral: 29 },
+    "UPA Botafogo": { ft: 24, geral: 34 },
+    "UPA Campo Grande II": { ft: 33, geral: 27 },
+    "UPA Engenho Novo": { ft: 37, geral: 32 },
+    "UPA Itaboraí": { ft: 17, geral: 18 },
+    "UPA Jacarepaguá": { ft: 61, geral: 40 },
+    "UPA Marechal Hermes": { ft: 28, geral: 32 },
+    "UPA Mesquita": { ft: 14, geral: 27 },
+    "UPA Ricardo de Albuquerque": { ft: 25, geral: 34 },
+    "UPA Santa Cruz": { ft: 15, geral: 15 }
+};
+
+// --- DADOS DE TAXA DE PACIENTES REDIRECIONADOS POR UPA ---
+const taxaRedirecionados = {
+    "Todas": { perc: 58, finalizadosConv: 1335, totalFT: 2778 }, // Ajustado de 2278 para 2778
+    "UPA Botafogo": { perc: 48, finalizadosConv: 126, totalFT: 261 },
+    "UPA Campo Grande II": { perc: 56, finalizadosConv: 176, totalFT: 313 },
+    "UPA Engenho Novo": { perc: 48, finalizadosConv: 197, totalFT: 407 },
+    "UPA Itaboraí": { perc: 58, finalizadosConv: 144, totalFT: 248 },
+    "UPA Jacarepaguá": { perc: 50, finalizadosConv: 203, totalFT: 401 },
+    "UPA Marechal Hermes": { perc: 42, finalizadosConv: 120, totalFT: 280 },
+    "UPA Mesquita": { perc: 47, finalizadosConv: 132, totalFT: 279 },
+    "UPA Ricardo de Albuquerque": { perc: 37, finalizadosConv: 43, totalFT: 114 },
+    "UPA Santa Cruz": { perc: 40, finalizadosConv: 194, totalFT: 475 }
+};
+
+// --- DADOS DE RESOLUTIVIDADE (PRESCRIÇÃO / CHECAGEM) POR UPA ---
+const resolutividade = {
+    "Todas": { percPrescricao: 52, prescricoes: 1448, totalFT: 2778, percChecagem: 63, checagens: 724, totalPrescricoes: 1448 },
+    "UPA Botafogo": { percPrescricao: 43, prescricoes: 112, totalFT: 261, percChecagem: 63, checagens: 70, totalPrescricoes: 112 },
+    "UPA Campo Grande II": { percPrescricao: 40, prescricoes: 124, totalFT: 313, percChecagem: 63, checagens: 78, totalPrescricoes: 124 },
+    "UPA Engenho Novo": { percPrescricao: 41, prescricoes: 165, totalFT: 407, percChecagem: 62, checagens: 102, totalPrescricoes: 165 },
+    "UPA Itaboraí": { percPrescricao: 40, prescricoes: 100, totalFT: 248, percChecagem: 63, checagens: 63, totalPrescricoes: 100 },
+    "UPA Jacarepaguá": { percPrescricao: 42, prescricoes: 167, totalFT: 401, percChecagem: 63, checagens: 105, totalPrescricoes: 167 },
+    "UPA Marechal Hermes": { percPrescricao: 43, prescricoes: 121, totalFT: 280, percChecagem: 61, checagens: 74, totalPrescricoes: 121 },
+    "UPA Mesquita": { percPrescricao: 39, prescricoes: 110, totalFT: 279, percChecagem: 64, checagens: 70, totalPrescricoes: 110 },
+    "UPA Ricardo de Albuquerque": { percPrescricao: 42, prescricoes: 48, totalFT: 114, percChecagem: 63, checagens: 30, totalPrescricoes: 48 },
+    "UPA Santa Cruz": { percPrescricao: 42, prescricoes: 201, totalFT: 475, percChecagem: 63, checagens: 127, totalPrescricoes: 201 }
+};
+
+// --- DADOS DE TOP 10 CIDS NO FAST TRACK POR UPA (GRÁFICO) ---
+const top10CIDsFT = {
+    "Todas": [
+        { cid: "R520", count: 1241 },
+        { cid: "A09", count: 983 },
+        { cid: "J00", count: 639 },
+        { cid: "J039", count: 597 },
+        { cid: "R05", count: 590 },
+        { cid: "M545", count: 584 },
+        { cid: "F411", count: 379 },
+        { cid: "R11", count: 371 },
+        { cid: "R51", count: 369 },
+        { cid: "I10", count: 363 }
+    ],
+    "UPA Botafogo": [
+        { cid: "R520", count: 159 },
+        { cid: "A09", count: 111 },
+        { cid: "R05", count: 89 },
+        { cid: "J039", count: 66 },
+        { cid: "M545", count: 61 },
+        { cid: "F411", count: 44 },
+        { cid: "R51", count: 44 },
+        { cid: "I10", count: 39 },
+        { cid: "J00", count: 36 },
+        { cid: "B349", count: 34 }
+    ],
+    "UPA Campo Grande II": [
+        { cid: "R05", count: 89 },
+        { cid: "M545", count: 84 },
+        { cid: "A09", count: 76 },
+        { cid: "R520", count: 64 },
+        { cid: "Z018", count: 53 },
+        { cid: "B349", count: 53 },
+        { cid: "R11", count: 48 },
+        { cid: "J00", count: 47 },
+        { cid: "Y66", count: 37 },
+        { cid: "M791", count: 36 }
+    ],
+    "UPA Engenho Novo": [
+        { cid: "R520", count: 220 },
+        { cid: "J00", count: 135 },
+        { cid: "A09", count: 112 },
+        { cid: "J039", count: 70 },
+        { cid: "R05", count: 60 },
+        { cid: "R10", count: 44 },
+        { cid: "R11", count: 43 },
+        { cid: "T784", count: 28 },
+        { cid: "N39", count: 26 },
+        { cid: "M545", count: 25 }
+    ],
+    "UPA Itaboraí": [
+        { cid: "R520", count: 84 },
+        { cid: "J039", count: 61 },
+        { cid: "R05", count: 59 },
+        { cid: "A09", count: 45 },
+        { cid: "I10", count: 38 },
+        { cid: "J00", count: 37 },
+        { cid: "K52", count: 37 },
+        { cid: "R51", count: 35 },
+        { cid: "R11", count: 29 },
+        { cid: "F411", count: 29 }
+    ],
+    "UPA Jacarepaguá": [
+        { cid: "R520", count: 196 },
+        { cid: "A09", count: 171 },
+        { cid: "J039", count: 100 },
+        { cid: "F411", count: 82 },
+        { cid: "R05", count: 75 },
+        { cid: "R51", count: 71 },
+        { cid: "J00", count: 68 },
+        { cid: "B349", count: 67 },
+        { cid: "M545", count: 58 },
+        { cid: "N390", count: 51 }
+    ],
+    "UPA Marechal Hermes": [
+        { cid: "R520", count: 198 },
+        { cid: "J00", count: 82 },
+        { cid: "A09", count: 60 },
+        { cid: "J039", count: 55 },
+        { cid: "N390", count: 54 },
+        { cid: "I10", count: 48 },
+        { cid: "M545", count: 44 },
+        { cid: "F411", count: 39 },
+        { cid: "R10", count: 35 },
+        { cid: "R05", count: 30 }
+    ],
+    "UPA Mesquita": [
+        { cid: "A09", count: 156 },
+        { cid: "M545", count: 124 },
+        { cid: "R520", count: 121 },
+        { cid: "J039", count: 77 },
+        { cid: "R11", count: 74 },
+        { cid: "R10", count: 72 },
+        { cid: "J00", count: 71 },
+        { cid: "Y66", count: 65 },
+        { cid: "R51", count: 64 },
+        { cid: "I10", count: 63 }
+    ],
+    "UPA Ricardo de Albuquerque": [
+        { cid: "R520", count: 106 },
+        { cid: "A09", count: 75 },
+        { cid: "J039", count: 72 },
+        { cid: "J00", count: 69 },
+        { cid: "M545", count: 57 },
+        { cid: "F411", count: 46 },
+        { cid: "R05", count: 40 },
+        { cid: "B349", count: 39 },
+        { cid: "N390", count: 37 }
+    ],
+    "UPA Santa Cruz": [
+        { cid: "A09", count: 177 },
+        { cid: "M545", count: 111 },
+        { cid: "J00", count: 94 },
+        { cid: "R520", count: 93 },
+        { cid: "R05", count: 88 },
+        { cid: "M255", count: 80 },
+        { cid: "R11", count: 62 },
+        { cid: "N390", count: 61 },
+        { cid: "J039", count: 61 },
+        { cid: "M791", count: 50 }
+    ]
+};
+
+// --- SIMULAÇÃO DE DADOS FIEL ÀS PROPORÇÕES (APENAS PARA EXPORTAÇÃO, NÃO PARA KPIS/GRÁFICOS) ---
 function generateUpaData(config) {
     const data = [];
     const ftCount = config.ftTotal;
@@ -456,13 +713,13 @@ function generateUpaData(config) {
     const ftSuccessCount = config.ftSuccess;
     
     const cids = ["R520", "A09", "M545", "J039", "R05", "M255", "B349", "R11", "R51", "M791", "J00", "R05", "A09", "M25.5", "R10.4"];
-    const riscos = ["Verde", "Azul"];
+    const riscos = ["Verde", "Azul", "Amarelo Consultório", "Amarelo Observação", "Laranja Consultório", "Laranja Observação", "Vermelho"];
 
     for (let i = 0; i < config.total; i++) {
         const isFt = i < ftCount;
         const desfecho = isFt ? (i < ftSuccessCount ? "FLUXO FAST TRACK" : "FLUXO CONVENCIONAL") : "FLUXO CONVENCIONAL";
-        const atestadoCount = isFt ? config.atestadoSim : Math.floor(nonFtCount * 0.3);
-        const temAtestado = i < atestadoCount ? "Sim" : "Não";
+        
+        const temAtestado = Math.random() < 0.3 ? "Sim" : "Não"; 
         
         const baseDate = new Date(2025, 11, 1, 7 + Math.floor(Math.random() * 12), Math.floor(Math.random() * 60));
         const esperaAteCR = isFt ? config.tempoEsperaCR.ft : config.tempoEsperaCR.geral;
@@ -535,180 +792,143 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function populateFilters() {
-    const competencias = [...new Set(processedData.map(d => d['COMPETÊNCIA']))];
     const unidades = [...new Set(processedData.map(d => d['UNIDADE']))];
-    const riscos = [...new Set(processedData.map(d => d['RISCO']))];
     const cids = ["A060 - DISENTERIA AMEBIANA AGUDA","A09 - DIARREIA E GASTROENTERITE DE ORIGEM INFECCIOSA PRESUMIVEL","A15 - TUBERCULOSE RESPIRATORIA COM CONFIRMACAO BACTERIOLOGICA E HISTOLOGICA","A158 - OUTRAS FORMAS DE TUBERCULOSE DAS VIAS RESPIRATORIAS, COM CONFIRMACAO BACTERIOLOGICA E HISTOLOGICA","A220 - CARBUNCULO CUTANEO","A311 - INFECCAO CUTANEA MICOBACTERIANA","A38 - ESCARLATINA","A46 - ERISIPELA","A49 - INFECCAO BACTERIANA DE LOCALIZACAO NAO ESPECIFICADA","A499 - INFECCAO BACTERIANA NAO ESPECIFICADA","A54 - INFECCAO GONOCOCICA","A689 - FEBRE RECORRENTE NAO ESPECIFICADA","A881 - VERTIGEM EPIDEMICA","A90 - DENGUE [DENGUE CLASSICO]","A928 - OUTRAS FEBRES VIRAIS ESPECIFICADAS TRANSMITIDAS POR MOSQUITOS","A96 - FEBRE HEMORRAGICA POR ARENAVIRUS","B008 - EXANTEMA SÚBITO","B009 - INFECCAO VIRAL NAO ESPECIFICADA","B00 - INFECCOES PELO VIRUS HERPES","B018 - OUTRAS FORMAS NAO ESPECIFICADAS DE INFECCAO PELO VIRUS HERPES","B02 - ZOSTER [HERPES ZOSTER]","B020 - MENINGITE POR HERPES ZOSTER","B021 - MENINGOENCEFALITE POR HERPES ZOSTER","B025 - ACOMETIMENTO DOS OLHOS NO HERPES ZOSTER","B029 - HERPES ZOSTER SEM COMPLICACOES","B059 - SARAMPO SEM COMPLICACOES","B080 - OUTRAS INFECCOES A VÍRUS ESPECIFICADAS","B082 - MOLUSCO CONTAGIOSO","B083 - DOENCA DE GIANOTTI-CROSTI","B085 - EXANTEMA POR ENTEROVIRUS","B087 - OUTRAS INFECCOES ESPECIFICADAS POR VIRUS","B088 - OUTRAS INFECCOES DE LOCALIZACAO NAO ESPECIFICADA POR VIRUS","B089 - INFECCAO VIRAL NAO ESPECIFICADA","B090 - SEQUELAS DE ARBOVIROSE","B099 - SEQUELAS DE OUTRAS DOENCAS VIRAIS","B150 - HEPATITE A COM ICTERICIA","B159 - HEPATITE A SEM ICTERICIA","B182 - HEPATITE C CRONICA","B20 - DOENCA PELO VÍRUS DA IMUNODEFICIÊNCIA HUMANA [HIV]","B259 - CITOMEGALOVIROSE NÃO ESPECIFICADA","B34 - INFECÇÃO VIRAL DE LOCALIZAÇÃO NÃO ESPECIFICADA","B349 - INFECCAO VIRAL NAO ESPECIFICADA","B352 - TINHA DOS PÉS","B358 - OUTRAS DERMATOFITOSES","B359 - DERMATOFITOSE NAO ESPECIFICADA","B388 - OUTRAS MINASICOS","B389 - MICOSE NAO ESPECIFICADA","B432 - CROMOBLASTOMICOSE","B450 - ESPOROTRICOSE","B469 - OUTRAS MICETOSES NAO ESPECIFICADAS","B480 - PARACOCCIDIOIDOMICOSE","B49 - MICOSE, NAO ESPECIFICADA","B522 - MALARIA DEVIDA A PLASMODIUM MALARIAE","B523 - MALARIA DEVIDA A PLASMODIUM OVALE","B529 - MALARIA NAO ESPECIFICADA","B59 - PNEUMOCISTOSE","B76 - ANQUILOSTOMÍASE","B77 - ASCARIDÍASE","B780 - TRICURÍASE","B86 - ESCABIOSE [SARNA]","B852 - PEDICULOSE NAO ESPECIFICADA","B87 - MIIASE","C020 - NEOPLASIA MALIGNA DA LINGUA","C34 - NEOPLASIA MALIGNA DOS BRONQUIOS E DOS PULMOES","C538 - NEOPLASIA MALIGNA DO COLO DO UTERO COM LESAO INVASIVA","D259 - LEIOMIOMA DO UTERO, NAO ESPECIFICADO","D50 - ANEMIA POR DEFICIENCIA DE FERRO","D53 - OUTRAS ANEMIAS NUTRICIONAIS","D570 - ANEMIA FALCIFORME COM CRISE","D649 - ANEMIA NAO ESPECIFICADA","E11 - DIABETES MELLITUS NÃO INSULINO DEPENDENTE","E119 - DIABETES MELLITUS NÃO INSULINO DEPENDENTE SEM COMPLICAÇÕES","E161 - OUTRA HIPOGLICEMIA","E162 - HIPOGLICEMIA NAO ESPECIFICADA"];
 
-    document.getElementById('filter-competencia').innerHTML = '<option value="">Todos</option>' + competencias.map(c => `<option value="${c}">${c}</option>`).join('');
     document.getElementById('filter-unidade').innerHTML = '<option value="">Todas</option>' + unidades.sort().map(u => `<option value="${u}">${u}</option>`).join('');
-    document.getElementById('filter-risco').innerHTML = '<option value="">Todos</option>' + riscos.map(r => `<option value="${r}">${r}</option>`).join('');
+    
+    updateRiscoFilter(); 
+    
     document.getElementById('filter-diagnostico').innerHTML = '<option value="">Todos</option>' + cids.sort().map(c => `<option value="${c}">${c}</option>`).join('');
 }
 
+function updateRiscoFilter() {
+    const unidadeSelecionada = document.getElementById('filter-unidade').value || "";
+    const riscos = riscosPorUPA[unidadeSelecionada] || riscosPorUPA[""]; 
+    const riscoAtual = document.getElementById('filter-risco').value;
+    
+    document.getElementById('filter-risco').innerHTML = riscos.map(r => `<option value="${r === 'Todas' ? '' : r}">${r}</option>`).join('');
+    
+    if (riscos.includes(riscoAtual) || (riscoAtual === '' && riscos.includes('Todas'))) {
+        document.getElementById('filter-risco').value = riscoAtual;
+    } else {
+        document.getElementById('filter-risco').value = ''; 
+    }
+}
+
 function addFilterListeners() {
-    ['filter-competencia', 'filter-unidade', 'filter-risco', 'filter-diagnostico'].forEach(id => {
-        document.getElementById(id).addEventListener('change', updateDashboard);
+    document.getElementById('filter-unidade').addEventListener('change', function() {
+        updateRiscoFilter(); 
+        updateDashboard(); 
     });
+    
+    document.getElementById('filter-diagnostico').addEventListener('change', updateDashboard);
 }
 
 function clearFilters() {
-    ['filter-competencia', 'filter-unidade', 'filter-risco', 'filter-diagnostico'].forEach(id => {
-        document.getElementById(id).value = "";
-    });
+    document.getElementById('filter-unidade').value = "";
+    document.getElementById('filter-diagnostico').value = "";
+    updateRiscoFilter(); 
     updateDashboard();
 }
 
-function getFilteredData() {
-    const comp = document.getElementById('filter-competencia').value;
-    const unid = document.getElementById('filter-unidade').value;
-    const risc = document.getElementById('filter-risco').value;
-    const diag = document.getElementById('filter-diagnostico').value;
-
-    return processedData.filter(d => 
-        (comp === "" || d['COMPETÊNCIA'] === comp) &&
-        (unid === "" || d['UNIDADE'] === unid) &&
-        (risc === "" || d['RISCO'] === risc) &&
-        (diag === "" || d['CID'] === diag)
-    );
-}
-
-function updateDashboard() {
-    const data = getFilteredData();
-    const totalAtendimentos = data.length;
-    const ftAtendimentos = data.filter(d => d['É FAST TRACK?'] === 'Sim');
-    const nftAtendimentos = data.filter(d => d['É FAST TRACK?'] === 'Não');
-
-    updateKPIs(data, totalAtendimentos, ftAtendimentos);
-    updateAtestados(ftAtendimentos, nftAtendimentos);
-    updateCharts(ftAtendimentos);
-    updateTable(data);
-}
-
-function updateKPIs(data, totalAtendimentos, ftAtendimentos) {
-    const percAdesao = totalAtendimentos > 0 ? (ftAtendimentos.length / totalAtendimentos) * 100 : 0;
-    document.querySelector('#kpi-adesao .kpi-value').textContent = `${Math.round(percAdesao)}%`;
-    document.querySelector('#kpi-adesao .kpi-subtext').textContent = `${ftAtendimentos.length} atendimentos FS de ${totalAtendimentos} atendimentos totais`;
-
-    const mediaEsperaAteCR_FT = ftAtendimentos.length > 0 ? ftAtendimentos.reduce((acc, d) => acc + d.tempo_espera_ate_cr, 0) / ftAtendimentos.length : 0;
-    const mediaEsperaAteCR_Geral = data.length > 0 ? data.reduce((acc, d) => acc + d.tempo_espera_ate_cr, 0) / data.length : 0;
-    document.querySelector('#kpi-espera-cr .kpi-comparison div:first-child .kpi-value').textContent = Math.round(mediaEsperaAteCR_FT);
-    document.querySelector('#kpi-espera-cr .kpi-comparison div:last-child .kpi-value').textContent = Math.round(mediaEsperaAteCR_Geral);
-
-    const mediaEsperaAtendimento_FT = ftAtendimentos.length > 0 ? ftAtendimentos.reduce((acc, d) => acc + d.tempo_espera_ate_atendimento, 0) / ftAtendimentos.length : 0;
-    const mediaEsperaAtendimento_Geral = data.length > 0 ? data.reduce((acc, d) => acc + d.tempo_espera_ate_atendimento, 0) / data.length : 0;
-    document.querySelector('#kpi-espera-atendimento .kpi-comparison div:first-child .kpi-value').textContent = Math.round(mediaEsperaAtendimento_FT);
-    document.querySelector('#kpi-espera-atendimento .kpi-comparison div:last-child .kpi-value').textContent = Math.round(mediaEsperaAtendimento_Geral);
-
-    const finalizadosEmFS = ftAtendimentos.filter(d => d['DESFECHO: FLUXO FAST TRACK OU CONVENCIONAL ?'] === 'FLUXO FAST TRACK');
-    const percTaxaAdesao = ftAtendimentos.length > 0 ? (finalizadosEmFS.length / ftAtendimentos.length) * 100 : 0;
-    document.querySelector('#kpi-taxa-adesao .kpi-value').textContent = `${Math.round(percTaxaAdesao)}%`;
-    document.querySelector('#kpi-taxa-adesao .kpi-subtext').textContent = `${finalizadosEmFS.length} atendimentos finalizados em FS de ${ftAtendimentos.length} atendimentos FS`;
-
-    const comPrescricao = ftAtendimentos.filter(d => d.tem_prescricao);
-    const comChecagem = ftAtendimentos.filter(d => d.tem_checagem);
-    const percPrescricao = ftAtendimentos.length > 0 ? (comPrescricao.length / ftAtendimentos.length) * 100 : 0;
-    const percChecagem = comPrescricao.length > 0 ? (comChecagem.length / comPrescricao.length) * 100 : 0;
-    document.querySelector('#kpi-resolutividade .kpi-comparison div:first-child .kpi-value').textContent = `${Math.round(percPrescricao)}%`;
-    document.querySelector('#kpi-resolutividade .kpi-comparison div:last-child .kpi-value').textContent = `${Math.round(percChecagem)}%`;
-}
-
-function updateAtestados(ftAtendimentos, nftAtendimentos) {
-    const unidadeSelecionada = document.getElementById('filter-unidade').value;
+// --- FUNÇÕES DE ATUALIZAÇÃO DE KPIS ---
+function updateTaxaClassificacaoFT() {
+    const unidadeSelecionada = document.getElementById('filter-unidade').value || "Todas";
+    const dados = taxaClassificacaoFT[unidadeSelecionada] || taxaClassificacaoFT["Todas"];
     
-    if (unidadeSelecionada === "") {
-        // Consolidado
-        const percFT = ftAtendimentos.length > 0 ? (121 / 473) * 100 : 0;
-        const percNFT = nftAtendimentos.length > 0 ? (1564 / 3854) * 100 : 0;
-        
-        document.getElementById('atestado-ft-perc').textContent = `${percFT.toFixed(2)}%`;
-        document.getElementById('atestado-ft-details').textContent = `121 de 473 atendimentos FT`;
-        
-        document.getElementById('atestado-nft-perc').textContent = `${percNFT.toFixed(2)}%`;
-        document.getElementById('atestado-nft-details').textContent = `1.564 de 3.854 atendimentos não FT`;
-    } else {
-        // Por UPA
-        const dados = atestadosPorUPA[unidadeSelecionada];
-        if (dados) {
-            const percFT = dados.totalFT > 0 ? (dados.atestadoFT / dados.totalFT) * 100 : 0;
-            const percNFT = dados.totalNFT > 0 ? (dados.atestadoNFT / dados.totalNFT) * 100 : 0;
-            
-            document.getElementById('atestado-ft-perc').textContent = `${percFT.toFixed(2)}%`;
-            document.getElementById('atestado-ft-details').textContent = `${dados.atestadoFT} de ${dados.totalFT} atendimentos FT`;
-            
-            document.getElementById('atestado-nft-perc').textContent = `${percNFT.toFixed(2)}%`;
-            document.getElementById('atestado-nft-details').textContent = `${dados.atestadoNFT} de ${dados.totalNFT} atendimentos não FT`;
-        }
-    }
+    document.querySelector('#kpi-adesao .kpi-value').textContent = `${dados.perc}%`;
+    document.querySelector('#kpi-adesao .kpi-subtext').textContent = `${dados.ft} atendimentos FS de ${dados.total} atendimentos totais`;
 }
 
+function updateTempoEsperaCR() {
+    const unidadeSelecionada = document.getElementById('filter-unidade').value || "Todas";
+    const dados = tempoEsperaCR[unidadeSelecionada] || tempoEsperaCR["Todas"];
+    
+    document.querySelector('#kpi-espera-cr .kpi-comparison div:first-child .kpi-value').textContent = `${dados.ft}`;
+    document.querySelector('#kpi-espera-cr .kpi-comparison div:last-child .kpi-value').textContent = `${dados.geral}`;
+}
+
+function updateTempoEsperaAtendimento() {
+    const unidadeSelecionada = document.getElementById('filter-unidade').value || "Todas";
+    const dados = tempoEsperaAtendimento[unidadeSelecionada] || tempoEsperaAtendimento["Todas"];
+    
+    document.querySelector('#kpi-espera-atendimento .kpi-comparison div:first-child .kpi-value').textContent = `${dados.ft}`;
+    document.querySelector('#kpi-espera-atendimento .kpi-comparison div:last-child .kpi-value').textContent = `${dados.geral}`;
+}
+
+function updateTaxaRedirecionados() {
+    const unidadeSelecionada = document.getElementById('filter-unidade').value || "Todas";
+    const dados = taxaRedirecionados[unidadeSelecionada] || taxaRedirecionados["Todas"];
+    
+    document.querySelector('#kpi-taxa-adesao .kpi-value').textContent = `${dados.perc}%`;
+    document.querySelector('#kpi-taxa-adesao .kpi-subtext').textContent = `${dados.finalizadosConv} atendimentos finalizados em fluxo convencional de ${dados.totalFT} atendimentos FT`;
+}
+
+function updateResolutividade() {
+    const unidadeSelecionada = document.getElementById('filter-unidade').value || "Todas";
+    const dados = resolutividade[unidadeSelecionada] || resolutividade["Todas"];
+    
+    document.querySelector('#kpi-resolutividade .kpi-comparison div:first-child .kpi-value').textContent = `${dados.percPrescricao}%`;
+    document.querySelector('#kpi-resolutividade .kpi-comparison div:first-child .kpi-subtext').textContent = `Com Prescrição (${dados.prescricoes} de ${dados.totalFT} atendimentos FT)`;
+    
+    document.querySelector('#kpi-resolutividade .kpi-comparison div:last-child .kpi-value').textContent = `${dados.percChecagem}%`;
+    document.querySelector('#kpi-resolutividade .kpi-comparison div:last-child .kpi-subtext').textContent = `Com Checagem (${dados.checagens} de ${dados.totalPrescricoes} prescrições)`;
+}
+
+function updateAtestados() {
+    const unidadeSelecionada = document.getElementById('filter-unidade').value || "Todas";
+    
+    const ftData = atestadoFTCardData[unidadeSelecionada] || atestadoFTCardData["Todas"];
+    document.getElementById('atestado-ft-perc').textContent = `${ftData.perc}%`;
+    document.getElementById('atestado-ft-details').textContent = `${ftData.atestado} de ${ftData.total} atendimentos FT`;
+    
+    const nftData = atestadoNFTCardData[unidadeSelecionada] || atestadoNFTCardData["Todas"];
+    document.getElementById('atestado-nft-perc').textContent = `${nftData.perc}%`;
+    document.getElementById('atestado-nft-details').textContent = `${nftData.atestado} de ${nftData.total} atendimentos não FT`;
+}
+
+// --- FUNÇÕES PARA DADOS DE GRÁFICOS ---
 function getHorariosGraficoFT() {
-    const unidadeSelecionada = document.getElementById('filter-unidade').value;
-    
-    if (unidadeSelecionada === "") {
-        return {
-            horas: [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19],
-            dados: [16, 54, 66, 59, 44, 42, 41, 29, 45, 42, 22, 8, 5]
-        };
-    } else {
-        const horarios = horariosUPA_FT[unidadeSelecionada] || {};
-        const horas = [];
-        const dados = [];
-        
-        for (let h = 7; h <= 19; h++) {
-            if (horarios[h] !== undefined) {
-                horas.push(h);
-                dados.push(horarios[h]);
-            }
-        }
-        
-        return { horas, dados };
-    }
+    const unidadeSelecionada = document.getElementById('filter-unidade').value || "Todas";
+    return horariosFTChartData[unidadeSelecionada] || horariosFTChartData["Todas"];
 }
 
 function getHorariosGraficoNFT() {
-    const unidadeSelecionada = document.getElementById('filter-unidade').value;
-    
-    if (unidadeSelecionada === "") {
-        return {
-            horas: [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19],
-            dados: [252, 354, 301, 240, 182, 163, 169, 185, 160, 149, 176, 200, 167]
-        };
-    } else {
-        const horarios = horariosUPA_NFT[unidadeSelecionada] || {};
-        const horas = [];
-        const dados = [];
-        
-        for (let h = 7; h <= 19; h++) {
-            if (horarios[h] !== undefined) {
-                horas.push(h);
-                dados.push(horarios[h]);
-            }
-        }
-        
-        return { horas, dados };
-    }
+    const unidadeSelecionada = document.getElementById('filter-unidade').value || "Todas";
+    return horariosNFTChartData[unidadeSelecionada] || horariosNFTChartData["Todas"];
 }
 
-function updateCharts(ftAtendimentos) {
-    const diagCounts = ftAtendimentos.reduce((acc, d) => {
-        if(d['CID']) { acc[d['CID']] = (acc[d['CID']] || 0) + 1; }
-        return acc;
-    }, {});
-    const top10Diags = Object.entries(diagCounts).sort((a, b) => b[1] - a[1]).slice(0, 10);
+function getTop10CIDsFT() {
+    const unidadeSelecionada = document.getElementById('filter-unidade').value || "Todas";
+    return top10CIDsFT[unidadeSelecionada] || top10CIDsFT["Todas"];
+}
+
+function updateDashboard() {
+    updateTaxaClassificacaoFT();
+    updateTempoEsperaCR();
+    updateTempoEsperaAtendimento();
+    updateTaxaRedirecionados();
+    updateResolutividade();
+    updateAtestados();
+    updateCharts();
+}
+
+function updateCharts() {
+    const top10DiagsData = getTop10CIDsFT();
     
     if (chartDiagnosticos) chartDiagnosticos.destroy();
     chartDiagnosticos = new ApexCharts(document.querySelector("#chart-diagnosticos"), {
-        series: [{ data: top10Diags.map(d => d[1]) }],
+        series: [{ data: top10DiagsData.map(d => d.count) }],
         chart: { type: 'bar', height: 350 },
         plotOptions: { bar: { horizontal: true, distributed: true, dataLabels: { position: 'top' } } },
         dataLabels: { enabled: true, offsetX: 20, style: { colors: ['#333'] } },
-        xaxis: { categories: top10Diags.map(d => d[0]) },
+        xaxis: { categories: top10DiagsData.map(d => d.cid) }, // Exibe apenas o código CID
         tooltip: {
             custom: function({ series, seriesIndex, dataPointIndex }) {
-                const cidCode = top10Diags[dataPointIndex][0];
+                const cidCode = top10DiagsData[dataPointIndex].cid;
                 const value = series[seriesIndex][dataPointIndex];
-                const descritivo = cidDescritivos[cidCode] || cidCode;
+                const descritivo = cidDescritivos[cidCode] || cidCode; // Usa a descrição completa no tooltip
                 return `<div style="padding: 10px; background: #333; color: #fff; border-radius: 4px;"><strong>${descritivo}</strong><br/>${value} casos</div>`;
             }
         },
@@ -716,12 +936,12 @@ function updateCharts(ftAtendimentos) {
     });
     chartDiagnosticos.render();
 
-    const atestadoSim = ftAtendimentos.filter(d => d['ATESTADO MÉDICO?'] === 'Sim').length;
-    const atestadoNao = ftAtendimentos.filter(d => d['ATESTADO MÉDICO?'] === 'Não').length;
-    
+    const unidadeSelecionada = document.getElementById('filter-unidade').value || "Todas";
+    const atestadoData = atestadoFTChartData[unidadeSelecionada] || atestadoFTChartData["Todas"];
+
     if (chartAtestado) chartAtestado.destroy();
     chartAtestado = new ApexCharts(document.querySelector("#chart-atestado"), {
-        series: [{ data: [atestadoSim, atestadoNao] }],
+        series: [{ data: [atestadoData.comAtestado, atestadoData.semAtestado] }],
         chart: { type: 'bar', height: 350 },
         plotOptions: { bar: { distributed: true, dataLabels: { position: 'top' } } },
         dataLabels: { enabled: true, style: { fontSize: '14px', colors: ['#333'] } },
@@ -758,27 +978,13 @@ function updateCharts(ftAtendimentos) {
     chartSazonalidadeNFT.render();
 }
 
-function updateTable(data) {
-    const tableBody = document.querySelector('#dataTable tbody');
-    if (data.length === 0) {
-        tableBody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Nenhum dado encontrado.</td></tr>';
-        return;
-    }
-    tableBody.innerHTML = data.map(d => `
-        <tr>
-            <td>${d['UNIDADE']}</td>
-            <td>${d['NOME DO PACIENTE']}</td>
-            <td>${d['DATA/HORA CHEGADA']}</td>
-            <td>${d['RISCO']}</td>
-            <td>${d['É FAST TRACK?']}</td>
-            <td>${d['TEMPO TOTAL NA UNIDADE']}</td>
-            <td>${d['DESFECHO: FLUXO FAST TRACK OU CONVENCIONAL ?']}</td>
-        </tr>
-    `).join('');
-}
-
 function exportData() {
-    const dataToExport = getFilteredData();
+    // A função exportData ainda usa processedData, que é gerado a partir de rawData
+    // e simula a estrutura original para exportação.
+    const dataToExport = processedData.filter(d => 
+        (document.getElementById('filter-unidade').value === "" || d['UNIDADE'] === document.getElementById('filter-unidade').value) &&
+        (document.getElementById('filter-diagnostico').value === "" || d['CID'] === document.getElementById('filter-diagnostico').value)
+    );
     const worksheet = XLSX.utils.json_to_sheet(dataToExport);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Dados Fast Track");
